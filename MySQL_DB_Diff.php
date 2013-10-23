@@ -208,13 +208,33 @@ function compare_database($new, $old) {
 	//table
 	foreach ($old['table'] as $table_name => $table_detail) {
 		if (!isset($new['table'][$table_name]))
-			$diff['table']['drop'][$table_name] = $table_name;
+			$diff['table']['drop'][$table_name] = $table_name; //删除表
 	}
 	foreach ($new['table'] as $table_name => $table_detail) {
 		if (!isset($old['table'][$table_name])) {
+			//新建表
 			$diff['table']['create'][$table_name] = $table_detail;
 			$diff['field']['create'][$table_name] = $new['field'][$table_name];
 			$diff['index']['create'][$table_name] = $new['index'][$table_name];
+		}
+		else{
+			//对比表
+			$old_detail=$old['table'][$table_name];
+			$change=array();
+			if($table_detail['Engine']!=$old_detail['Engine'])
+				$change['Engine']=$table_detail['Engine'];
+			if($table_detail['Row_format']!=$old_detail['Row_format'])
+				$change['Row_format']=$table_detail['Row_format'];
+			if($table_detail['Collation']!=$old_detail['Collation'])
+				$change['Collation']=$table_detail['Collation'];
+			//if($table_detail['Create_options']!=$old_detail['Create_options'])
+			//	$change['Create_options']=$table_detail['Create_options'];
+			if($table_detail['Comment']!=$old_detail['Comment'])
+				$change['Comment']=$table_detail['Comment'];
+			if(!empty($change))
+				$diff['table']['change'][$table_name]=$change;
+			else
+				$diff['table']['change'][$table_name]=array();
 		}
 	}
 
@@ -439,6 +459,22 @@ function build_query($diff) {
 				list($charset) = explode('_', $table_detail['Collation']);
 				$sql .= implode(', ', $t) . (!empty($k) ? ',' . implode(', ', $k) : '') . ') ENGINE = ' . $table_detail['Engine'] . ' DEFAULT CHARSET = ' . $charset;
 				$sqls[] = $sql;
+			}
+		}
+		if(isset($diff['table']['change'])){
+			foreach($diff['table']['change'] as $table_name=>$table_changes){
+				if(!empty($table_changes)){
+					$sql="ALTER TABLE `$table_name`";
+					foreach($table_changes as $option=>$value){
+						if($option=='Collation'){
+							list($charset) = explode('_', $value);
+							$sql.=" DEFAULT CHARACTER SET $charset COLLATE $value";
+						}
+						else
+							$sql.=" ".strtoupper($option)." = $value ";
+					}
+					$sqls[]=$sql;
+				}
 			}
 		}
 		if (isset($diff['field']['drop'])) {
