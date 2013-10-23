@@ -233,8 +233,6 @@ function compare_database($new, $old) {
 				$change['Comment']=$table_detail['Comment'];
 			if(!empty($change))
 				$diff['table']['change'][$table_name]=$change;
-			else
-				$diff['table']['change'][$table_name]=array();
 		}
 	}
 
