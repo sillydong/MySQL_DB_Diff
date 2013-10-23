@@ -167,6 +167,7 @@ function showform($post = null, $errors = null) {
 	</form>
 </div>';
 	echo $form_html;
+	getfooter();
 }
 
 function showdiff($old_host, $old_user, $old_pass, $old_db, $sqls, $errors = array(), $keys = array()) {
@@ -199,7 +200,7 @@ function showdiff($old_host, $old_user, $old_pass, $old_db, $sqls, $errors = arr
 	</form>
 </div>';
 	echo $form_html;
-
+	getfooter();
 }
 
 function compare_database($new, $old) {
