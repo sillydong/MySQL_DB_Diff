@@ -7,9 +7,9 @@
  * Version: 1.0
  */
 
-header("Cache-Control: no-store, no-cache, must-revalidate");
-header("Cache-Control: post-check=0, pre-check=0", false);
-header("Pragma: no-cache");
+header('Cache-Control: no-store, no-cache, must-revalidate');
+header('Cache-Control: post-check=0, pre-check=0', false);
+header('Pragma: no-cache');
 
 if (isset($_POST['submit'])) {
     if (isset($_POST['action']) && $_POST['action'] == 'diff') {
@@ -24,23 +24,23 @@ if (isset($_POST['submit'])) {
         $old_db = trim($_POST['old_db']);
 
         if (!empty($new_host) && !empty($new_user) && !empty($new_pass) && !empty($new_db) && !empty($old_host) && !empty($old_user) && !empty($old_pass) && !empty($old_db)) {
-            $new_errors = array();
-            $old_errors = array();
+            $new_errors = [];
+            $old_errors = [];
             $new = get_db_detail($new_host, $new_user, $new_pass, $new_db, $new_errors);
             $old = get_db_detail($old_host, $old_user, $old_pass, $old_db, $old_errors);
-            if (!empty($new_errors) || !empty($old_errors))
+            if (!empty($new_errors) || !empty($old_errors)) {
                 showform($_POST, array_merge($new_errors, $old_errors));
-            else {
+            } else {
                 $diff = compare_database($new, $old);
                 if (empty($diff['table']) && empty($diff['field']) && empty($diff['index'])) {
-                    showform($_POST, array('两个数据库结构完全相同，无可同步项目'));
+                    showform($_POST, ['两个数据库结构完全相同，无可同步项目']);
                 } else {
                     $sqls = build_query($diff);
                     showdiff($old_host, $old_user, $old_pass, $old_db, $sqls);
                 }
             }
         } else {
-            showform($_POST, array('请补全新旧服务器连接信息'));
+            showform($_POST, ['请补全新旧服务器连接信息']);
         }
     } elseif (isset($_POST['action']) && $_POST['action'] == 'write') {
         $old_host = trim($_POST['old_host']);
@@ -49,19 +49,20 @@ if (isset($_POST['submit'])) {
         $old_db = trim($_POST['old_db']);
         $sqls = unserialize(trim(html_entity_decode($_POST['sqls'])));
         if (!isset($_POST['keys'])) {
-            showdiff($old_host, $old_user, $old_pass, $old_db, $sqls, array('未选择执行的修改'));
+            showdiff($old_host, $old_user, $old_pass, $old_db, $sqls, ['未选择执行的修改']);
         } else {
             $keys = $_POST['keys'];
             if (!empty($old_host) && !empty($old_user) && !empty($old_pass) && !empty($old_db) && !empty($keys) && is_array($keys) && !empty($sqls) && is_array($sqls)) {
-                $errors = array();
-                $chosen = array();
-                foreach ($keys as $key)
+                $errors = [];
+                $chosen = [];
+                foreach ($keys as $key) {
                     $chosen[] = $sqls[$key];
+                }
                 $result = update_db($old_host, $old_user, $old_pass, $old_db, $chosen, $errors);
                 if (!empty($errors)) {
                     showdiff($old_host, $old_user, $old_pass, $old_db, $sqls, $errors, $keys);
                 } else {
-                    showform(null, array('同步成功'));
+                    showform(null, ['同步成功']);
                 }
             } else {
                 showdiff($old_host, $old_user, $old_pass, $old_db, $sqls);
@@ -112,13 +113,13 @@ EOD;
 function showform($post = null, $errors = null)
 {
     getheader('同步数据库');
-    $error_html = "<div>";
+    $error_html = '<div>';
     if (!empty($errors)) {
         foreach ($errors as $error) {
-            $error_html .= "<p class='red'>" . $error . "</p>";
+            $error_html .= "<p class='red'>" . $error . '</p>';
         }
     }
-    $error_html .= "</div>";
+    $error_html .= '</div>';
 
     $form_html = '
 <div style="margin:20px 200px 30px 200px;">
@@ -165,21 +166,21 @@ function showform($post = null, $errors = null)
     getfooter();
 }
 
-function showdiff($old_host, $old_user, $old_pass, $old_db, $sqls, $errors = array(), $keys = array())
+function showdiff($old_host, $old_user, $old_pass, $old_db, $sqls, $errors = [], $keys = [])
 {
-    getheader("对比结果");
+    getheader('对比结果');
     $table_html = '';
     foreach ($sqls as $key => $sql) {
         $table_html .= '<tr><td><input type="checkbox" name="keys[]" id="key_' . $key . '" value="' . $key . '"' . (in_array($key, $keys) ? 'checked="checked"' : '') . ' /></td><td><label for="key_' . $key . '">' . htmlentities($sql) . '</label></td></tr>';
     }
     $server_html = '<input type="hidden" name="old_host" value="' . $old_host . '" /><input type="hidden" name="old_user" value="' . $old_user . '" /><input type="hidden" name="old_pass" value="' . $old_pass . '" /><input type="hidden" name="old_db" value="' . $old_db . '"/>';
-    $error_html = "<div>";
+    $error_html = '<div>';
     if (!empty($errors)) {
         foreach ($errors as $error) {
-            $error_html .= "<p class='red'>" . $error . "</p>";
+            $error_html .= "<p class='red'>" . $error . '</p>';
         }
     }
-    $error_html .= "</div>";
+    $error_html .= '</div>';
     $form_html = '
 <div style="margin:20px 200px 30px 200px;">
 	<div class="title">对比结果 —— MySQL_DB_Diff </div>
@@ -201,11 +202,12 @@ function showdiff($old_host, $old_user, $old_pass, $old_db, $sqls, $errors = arr
 
 function compare_database($new, $old)
 {
-    $diff = array('table' => array(), 'field' => array(), 'index' => array());
+    $diff = ['table' => [], 'field' => [], 'index' => []];
     //table
     foreach ($old['table'] as $table_name => $table_detail) {
-        if (!isset($new['table'][$table_name]))
-            $diff['table']['drop'][$table_name] = $table_name; //删除表
+        if (!isset($new['table'][$table_name])) {
+            $diff['table']['drop'][$table_name] = $table_name;
+        } //删除表
     }
     foreach ($new['table'] as $table_name => $table_detail) {
         if (!isset($old['table'][$table_name])) {
@@ -216,19 +218,24 @@ function compare_database($new, $old)
         } else {
             //对比表
             $old_detail = $old['table'][$table_name];
-            $change = array();
-            if ($table_detail['Engine'] !== $old_detail['Engine'])
+            $change = [];
+            if ($table_detail['Engine'] !== $old_detail['Engine']) {
                 $change['Engine'] = $table_detail['Engine'];
-            if ($table_detail['Row_format'] !== $old_detail['Row_format'])
+            }
+            if ($table_detail['Row_format'] !== $old_detail['Row_format']) {
                 $change['Row_format'] = $table_detail['Row_format'];
-            if ($table_detail['Collation'] !== $old_detail['Collation'])
+            }
+            if ($table_detail['Collation'] !== $old_detail['Collation']) {
                 $change['Collation'] = $table_detail['Collation'];
+            }
             //if($table_detail['Create_options']!=$old_detail['Create_options'])
             //	$change['Create_options']=$table_detail['Create_options'];
-            if ($table_detail['Comment'] !== $old_detail['Comment'])
+            if ($table_detail['Comment'] !== $old_detail['Comment']) {
                 $change['Comment'] = $table_detail['Comment'];
-            if (!empty($change))
+            }
+            if (!empty($change)) {
                 $diff['table']['change'][$table_name] = $change;
+            }
         }
     }
 
@@ -313,29 +320,31 @@ function compare_database($new, $old)
     return $diff;
 }
 
-function get_db_detail($server, $username, $password, $database, &$errors = array())
+function get_db_detail($server, $username, $password, $database, &$errors = [])
 {
     $connection = @mysqli_connect($server, $username, $password);
     if ($connection === false) {
-        $errors[] = '无法连接服务器:' . $server . ':' . $username . ':' . $password . ":" . $database;
+        $errors[] = '无法连接服务器:' . $server . ':' . $username . ':' . $password . ':' . $database;
+
         return false;
     }
     $serverset = 'character_set_connection=utf8, character_set_results=utf8, character_set_client=binary';
     $serverset .= @mysqli_get_server_info($connection) > '5.0.1' ? ', sql_mode=\'\'' : '';
-    @mysqli_query($connection,"SET $serverset");
-    if (!@mysqli_select_db($connection,$database)) {
+    @mysqli_query($connection, "SET $serverset");
+    if (!@mysqli_select_db($connection, $database)) {
         $errors[] = '无法使用数据库:' . $database;
         @mysqli_close($connection);
+
         return false;
     }
 
-    $detail = array('table' => array(), 'field' => array(), 'index' => array());
-    $tables = query($connection, "show table status");
+    $detail = ['table' => [], 'field' => [], 'index' => []];
+    $tables = query($connection, 'show table status');
     if ($tables) {
         foreach ($tables as $key_table => $table) {
             $detail['table'][$table['Name']] = $table;
             //字段
-            $fields = query($connection, "show full fields from `" . $table['Name'] . "`");
+            $fields = query($connection, 'show full fields from `' . $table['Name'] . '`');
             if ($fields) {
                 foreach ($fields as $key_field => $field) {
                     $fields[$field['Field']] = $field;
@@ -346,81 +355,92 @@ function get_db_detail($server, $username, $password, $database, &$errors = arra
                 $errors[] = '无法获得表的字段:' . $database . ':' . $table['Name'];
             }
             //索引
-            $indexes = query($connection, "show index from `" . $table['Name'] . "`");
+            $indexes = query($connection, 'show index from `' . $table['Name'] . '`');
             if ($indexes) {
                 foreach ($indexes as $key_index => $index) {
                     if (!isset($indexes[$index['Key_name']])) {
-                        $index['Column_name'] = array($index['Seq_in_index'] => $index['Column_name']);
+                        $index['Column_name'] = [$index['Seq_in_index'] => $index['Column_name']];
                         $indexes[$index['Key_name']] = $index;
-                    } else
+                    } else {
                         $indexes[$index['Key_name']]['Column_name'][$index['Seq_in_index']] = $index['Column_name'];
+                    }
                     unset($indexes[$key_index]);
                 }
                 $detail['index'][$table['Name']] = $indexes;
             } else {
                 //$errors[]='无法获得表的索引信息:'.$database.':'.$table['Name'];
-                $detail['index'][$table['Name']] = array();
+                $detail['index'][$table['Name']] = [];
             }
         }
         @mysqli_close($connection);
+
         return $detail;
     } else {
         $errors[] = '无法获得数据库的表详情:' . $database;
         @mysqli_close($connection);
+
         return false;
     }
 }
 
-function update_db($server, $username, $password, $database, $sqls, &$errors = array())
+function update_db($server, $username, $password, $database, $sqls, &$errors = [])
 {
     $connection = @mysqli_connect($server, $username, $password);
     if ($connection === false) {
-        $errors[] = '无法连接服务器:' . $server . ':' . $username . ':' . $password . ":" . $database;
+        $errors[] = '无法连接服务器:' . $server . ':' . $username . ':' . $password . ':' . $database;
+
         return false;
     }
     $serverset = 'character_set_connection=utf8, character_set_results=utf8, character_set_client=binary';
     $serverset .= @mysqli_get_server_info($connection) > '5.0.1' ? ', sql_mode=\'\'' : '';
-    @mysqli_query($connection,"SET $serverset");
-    if (!@mysqli_select_db($connection,$database)) {
+    @mysqli_query($connection, "SET $serverset");
+    if (!@mysqli_select_db($connection, $database)) {
         $errors[] = '无法使用数据库:' . $database;
         @mysqli_close($connection);
+
         return false;
     }
     $result = true;
     foreach ($sqls as $sql) {
         $result &= execute($connection, $sql, $errors);
     }
+
     return $result;
 }
 
 function query($connection, $sql)
 {
     if ($connection) {
-        $result = @mysqli_query($connection,$sql);
+        $result = @mysqli_query($connection, $sql);
         if ($result) {
-            $result_a = array();
-            while ($row = @mysqli_fetch_assoc($result))
+            $result_a = [];
+            while ($row = @mysqli_fetch_assoc($result)) {
                 $result_a[] = $row;
+            }
+
             return $result_a;
         }
     }
+
     return false;
 }
 
 function execute($connection, $sql, &$errors)
 {
     if ($connection) {
-        $result = @mysqli_query($sql, $connection);
-        if ($result)
+        $result = @mysqli_query($connection, $sql);
+        if ($result) {
             return true;
+        }
         $errors[] = @mysqli_error($connection);
     }
+
     return false;
 }
 
 function build_query($diff)
 {
-    $sqls = array();
+    $sqls = [];
     if ($diff) {
         if (isset($diff['table']['drop'])) {
             foreach ($diff['table']['drop'] as $table_name => $table_detail) {
@@ -431,18 +451,19 @@ function build_query($diff)
             foreach ($diff['table']['create'] as $table_name => $table_detail) {
                 $fields = $diff['field']['create'][$table_name];
                 $sql = "CREATE TABLE `$table_name` (";
-                $t = array();
-                $k = array();
+                $t = [];
+                $k = [];
                 foreach ($fields as $field) {
                     $t[] = "`{$field['Field']}` " . strtoupper($field['Type']) . sqlnull($field['Null']) . sqldefault($field['Default']) . sqlextra($field['Extra']) . sqlcomment($field['Comment']);
                 }
                 if (isset($diff['index']['create'][$table_name]) && !empty($diff['index']['create'][$table_name])) {
                     $indexs = $diff['index']['create'][$table_name];
                     foreach ($indexs as $index_name => $index_detail) {
-                        if ($index_name == 'PRIMARY')
-                            $k[] = "PRIMARY KEY (`" . implode('`,`', $index_detail['Column_name']) . "`)";
-                        else
-                            $k[] = ($index_detail['Non_unique'] == 0 ? "UNIQUE" : "INDEX") . "`$index_name`" . " (`" . implode('`,`', $index_detail['Column_name']) . "`)";
+                        if ($index_name == 'PRIMARY') {
+                            $k[] = 'PRIMARY KEY (`' . implode('`,`', $index_detail['Column_name']) . '`)';
+                        } else {
+                            $k[] = ($index_detail['Non_unique'] == 0 ? 'UNIQUE' : 'INDEX') . "`$index_name`" . ' (`' . implode('`,`', $index_detail['Column_name']) . '`)';
+                        }
                     }
                 }
                 list($charset) = explode('_', $table_detail['Collation']);
@@ -458,8 +479,9 @@ function build_query($diff)
                         if ($option == 'Collation') {
                             list($charset) = explode('_', $value);
                             $sql .= " DEFAULT CHARACTER SET $charset COLLATE $value";
-                        } else
-                            $sql .= " " . strtoupper($option) . " = $value ";
+                        } else {
+                            $sql .= ' ' . strtoupper($option) . " = $value ";
+                        }
                     }
                     $sqls[] = $sql;
                 }
@@ -468,10 +490,11 @@ function build_query($diff)
         if (isset($diff['index']['drop'])) {
             foreach ($diff['index']['drop'] as $table_name => $indexs) {
                 foreach ($indexs as $index_name => $index_detail) {
-                    if ($index_name == 'PRIMARY')
+                    if ($index_name == 'PRIMARY') {
                         $sqls[] = "ALTER TABLE `$table_name` DROP PRIMARY KEY";
-                    else
+                    } else {
                         $sqls[] = "ALTER TABLE `$table_name` DROP INDEX `$index_name`";
+                    }
                 }
             }
         }
@@ -492,10 +515,11 @@ function build_query($diff)
         if (isset($diff['index']['add'])) {
             foreach ($diff['index']['add'] as $table_name => $indexs) {
                 foreach ($indexs as $index_name => $index_detail) {
-                    if ($index_name == 'PRIMARY')
-                        $sqls[] = "ALTER TABLE `$table_name` ADD PRIMARY KEY (`" . implode('`,`', $index_detail['Column_name']) . "`)";
-                    else
-                        $sqls[] = "ALTER TABLE `$table_name` ADD" . ($index_detail['Non_unique'] == 0 ? " UNIQUE " : " INDEX ") . "`$index_name`" . " (`" . implode('`,`', $index_detail['Column_name']) . "`)";
+                    if ($index_name == 'PRIMARY') {
+                        $sqls[] = "ALTER TABLE `$table_name` ADD PRIMARY KEY (`" . implode('`,`', $index_detail['Column_name']) . '`)';
+                    } else {
+                        $sqls[] = "ALTER TABLE `$table_name` ADD" . ($index_detail['Non_unique'] == 0 ? ' UNIQUE ' : ' INDEX ') . "`$index_name`" . ' (`' . implode('`,`', $index_detail['Column_name']) . '`)';
+                    }
                 }
             }
         }
@@ -532,15 +556,16 @@ function sqlcol($val)
             return '';
         default:
             list($charset) = explode('_', $val);
+
             return ' CHARACTER SET ' . $charset . ' COLLATE ' . $val;
     }
 }
 
 function sqldefault($val)
 {
-    if($val===null){
+    if ($val === null) {
         return '';
-    }else{
+    } else {
         return " DEFAULT '" . stripslashes($val) . "'";
     }
 }
@@ -576,5 +601,3 @@ function sqlcomment($val)
             return " COMMENT '" . stripslashes($val) . "'";
     }
 }
-
-?>
